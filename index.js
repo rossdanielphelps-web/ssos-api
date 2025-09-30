@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import axios from "axios";
@@ -13,18 +12,15 @@ if (!AIRTABLE_TOKEN || !AIRTABLE_BASE) {
 }
 
 const AIRTABLE_API = `https://api.airtable.com/v0/${AIRTABLE_BASE}`;
-
 const airtable = axios.create({
   baseURL: AIRTABLE_API,
   headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` }
 });
 
-// Health check
-app.get("/", (_req, res) => {
-  res.send("SSOS API is live 🚀");
-});
+// health
+app.get("/", (_req, res) => res.send("SSOS API is live 🚀"));
 
-// List Projects
+// list projects
 app.get("/api/projects", async (_req, res) => {
   try {
     const r = await airtable.get("/Projects", { params: { maxRecords: 100 } });
@@ -35,7 +31,7 @@ app.get("/api/projects", async (_req, res) => {
   }
 });
 
-// Create Project
+// create project
 app.post("/api/projects", async (req, res) => {
   try {
     const payload = {
@@ -55,13 +51,13 @@ app.post("/api/projects", async (req, res) => {
   }
 });
 
-// Search helper by partial text
+// simple search helper
 app.get("/api/search", async (req, res) => {
   const { tableName, field = "Name", q = "" } = req.query;
   try {
-    const filterByFormula = `FIND(LOWER(\"${q}\"), LOWER({${field}}))`;
+    const filterByFormula = `FIND(LOWER(\\"${q}\\"), LOWER({${field}}))`;
     const r = await airtable.get(`/${encodeURIComponent(tableName)}`, {
-      params: { filterByFormula, maxRecords: 10 }
+      params: { filterByFormula, maxRecords: 20 }
     });
     res.json(r.data.records);
   } catch (e) {
@@ -70,12 +66,11 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
-// Create PreSprintCanvas with linked records by ID
+// create pre-sprint canvas
 app.post("/api/canvas", async (req, res) => {
   try {
     const f = req.body || {};
     const toLinks = (ids=[]) => ids.filter(Boolean).map(id => ({ id }));
-
     const payload = {
       fields: {
         "Project": toLinks([f.projectId]),
@@ -94,7 +89,6 @@ app.post("/api/canvas", async (req, res) => {
         "Time Horizon": f.timeHorizon || undefined
       }
     };
-
     const r = await airtable.post("/PreSprintCanvas", payload);
     res.json(r.data);
   } catch (e) {
